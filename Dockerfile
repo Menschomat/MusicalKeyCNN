@@ -19,7 +19,6 @@ FROM python:3.13-slim AS runtime
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends libsndfile1 \
-    && apt-get purge -y --auto-remove ncurses-bin \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
