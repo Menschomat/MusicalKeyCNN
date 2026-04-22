@@ -544,8 +544,6 @@ dependencies = [
     { name = "torch", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
     { name = "torchaudio", version = "2.11.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
     { name = "torchaudio", version = "2.11.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
-    { name = "torchcodec", version = "0.11.1", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
-    { name = "torchcodec", version = "0.11.1+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
     { name = "tqdm" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -565,7 +563,6 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "torch", specifier = ">=2.0.0", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torchaudio", specifier = ">=2.0.0", index = "https://download.pytorch.org/whl/cpu" },
-    { name = "torchcodec", specifier = ">=0.11.1", index = "https://download.pytorch.org/whl/cpu" },
     { name = "tqdm", specifier = ">=4.65.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.29.0" },
 ]
@@ -1239,32 +1236,6 @@ wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torchaudio-2.11.0%2Bcpu-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:ad3e6141c1078c5c9c8ae7c3cdf6c80eb35612c99c8cf3f76fe295845f45bb9d" },
     { url = "https://download-r2.pytorch.org/whl/cpu/torchaudio-2.11.0%2Bcpu-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:69db7c3d86af1bc8224f7053395ace3e2bd8c56b0c3922bc7b798114440c88e5" },
     { url = "https://download-r2.pytorch.org/whl/cpu/torchaudio-2.11.0%2Bcpu-cp314-cp314t-win_amd64.whl", hash = "sha256:b6bfca873bd67d02fbbaa254312283be48dc1ca5532013152527210db432ef8c" },
-]
-
-[[package]]
-name = "torchcodec"
-version = "0.11.1"
-source = { registry = "https://download.pytorch.org/whl/cpu" }
-resolution-markers = [
-    "sys_platform == 'darwin'",
-]
-wheels = [
-    { url = "https://download.pytorch.org/whl/cpu/torchcodec-0.11.1-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:915fbe20068ec77486fbbeaf0c627c89c7376445f27d215b7489c0a03c64fd4c" },
-    { url = "https://download.pytorch.org/whl/cpu/torchcodec-0.11.1-cp314-cp314-macosx_12_0_arm64.whl", hash = "sha256:a00ef79e847644f91c9995de021062adc851916b16244d26c0a7a04569710508" },
-]
-
-[[package]]
-name = "torchcodec"
-version = "0.11.1+cpu"
-source = { registry = "https://download.pytorch.org/whl/cpu" }
-resolution-markers = [
-    "sys_platform != 'darwin'",
-]
-wheels = [
-    { url = "https://download.pytorch.org/whl/cpu/torchcodec-0.11.1%2Bcpu-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:cf69490a04b1683dbe5a1d44ac64ef1a9e0c5767c46569cbad362b5d754d9905" },
-    { url = "https://download.pytorch.org/whl/cpu/torchcodec-0.11.1%2Bcpu-cp313-cp313-win_amd64.whl", hash = "sha256:55eeff5f1e52bac8172218a46c3581715c8811b4e7d78880e54cf8c64df79e8d" },
-    { url = "https://download.pytorch.org/whl/cpu/torchcodec-0.11.1%2Bcpu-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:710d16a68bfeabfb89696b563fa400fd6ba95fcebd6ffa808650d5a206d64154" },
-    { url = "https://download.pytorch.org/whl/cpu/torchcodec-0.11.1%2Bcpu-cp314-cp314-win_amd64.whl", hash = "sha256:97e145b365681bbd6b5013fe5cf148363e928f7f515eff3a3a904d74e545c85c" },
 ]
 
 [[package]]
