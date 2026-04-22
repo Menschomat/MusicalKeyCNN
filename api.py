@@ -7,7 +7,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from eval import load_model
-from predict_keys import camelot_output, preprocess_mp3
+from predict_keys import SUPPORTED_EXTENSIONS, camelot_output, preprocess_audio
 
 MODEL_PATH = Path("checkpoints/keynet.pt")
 
@@ -41,17 +41,18 @@ def health():
 
 @app.post("/predict", response_model=PredictResponse)
 async def predict(file: UploadFile = File(...)):
-    if not file.filename.lower().endswith(".mp3"):
-        raise HTTPException(status_code=400, detail="Only .mp3 files are supported.")
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in SUPPORTED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Unsupported format '{suffix}'. Supported: {', '.join(sorted(SUPPORTED_EXTENSIONS))}")
 
     contents = await file.read()
 
-    with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(contents)
         tmp_path = Path(tmp.name)
 
     try:
-        spec_tensor = preprocess_mp3(tmp_path)
+        spec_tensor = preprocess_audio(tmp_path)
         spec_tensor = spec_tensor.unsqueeze(0).to(_device)
 
         with torch.no_grad():

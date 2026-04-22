@@ -8,6 +8,8 @@ import numpy as np
 from dataset import CAMELOT_MAPPING
 from eval import load_model
 
+SUPPORTED_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a"}
+
 def parse_args():
     """
     Parses command-line arguments.
@@ -24,32 +26,32 @@ def parse_args():
                         help="Device to use: 'cpu' or 'cuda'. If not given, uses CUDA if available.")
     return parser.parse_args()
 
-def get_mp3_list(path):
+def get_audio_files(path):
     """
-    Returns a list of mp3 files from a folder or a single file.
+    Returns a list of supported audio files from a folder or a single file.
     Args:
-        path (str or Path): Path to .mp3 file or directory.
+        path (str or Path): Path to an audio file or directory.
 
     Returns:
-        List[Path]: List of mp3 file Paths.
+        List[Path]: List of audio file Paths.
 
     Raises:
-        ValueError: If file is not .mp3 or folder contains none.
+        ValueError: If file format is unsupported or folder contains none.
     """
     path = Path(path)
     if path.is_file():
-        if path.suffix.lower() != ".mp3":
-            raise ValueError(f"File {path} is not a .mp3 file.")
+        if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            raise ValueError(f"Unsupported format '{path.suffix}'. Supported: {', '.join(sorted(SUPPORTED_EXTENSIONS))}")
         return [path]
     elif path.is_dir():
-        files = list(path.glob("*.mp3"))
+        files = [f for f in path.iterdir() if f.suffix.lower() in SUPPORTED_EXTENSIONS]
         if not files:
-            raise ValueError(f"No .mp3 files found in {path}")
+            raise ValueError(f"No supported audio files found in {path}")
         return files
     else:
         raise FileNotFoundError(f"{path} is not a valid file or folder.")
 
-def preprocess_mp3(mp3_path, sample_rate=44100, n_bins=105, hop_length=8820):
+def preprocess_audio(mp3_path, sample_rate=44100, n_bins=105, hop_length=8820):
     """
     Loads an mp3, converts to mono, resamples, and extracts a log-magnitude CQT spectrogram.
     Then slices result as in MTG preprocessed dataset (removes last frequency bin and converts to torch tensor).
@@ -110,7 +112,7 @@ def main():
     device = torch.device(args.device) if args.device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = load_model(args.model_path, device)
 
-    mp3_files = get_mp3_list(args.path)
+    mp3_files = get_audio_files(args.path)
 
     print("="*70)
     print("{:^70}".format("Key Prediction Results"))
@@ -120,7 +122,7 @@ def main():
 
     for mp3_path in mp3_files:
         try:
-            spec_tensor = preprocess_mp3(mp3_path)
+            spec_tensor = preprocess_audio(mp3_path)
             # Torch shape: (1, freq, time); batchify and to device
             spec_tensor = spec_tensor.to(device)
             spec_tensor = spec_tensor.unsqueeze(0) if spec_tensor.ndim == 3 else spec_tensor  # Add batch dimension if needed
