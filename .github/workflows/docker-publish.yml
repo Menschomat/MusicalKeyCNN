@@ -51,10 +51,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Lowercase image ref for Trivy
+        run: |
+          echo "IMAGE_REF=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')@${{ steps.push.outputs.digest }}" >> $GITHUB_ENV
+
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
+          image-ref: ${{ env.IMAGE_REF }}
           format: sarif
           output: trivy-results.sarif
 
