@@ -15,10 +15,10 @@ RUN uv sync --frozen --no-dev --no-install-project
 FROM python:3.13-slim AS runtime
 
 # libsndfile1  – required by soundfile (librosa audio I/O)
-# ffmpeg       – required by torchaudio to decode MP3 files
+# ffmpeg is intentionally omitted: torchaudio 2.x bundles its own FFmpeg
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends libsndfile1 ffmpeg \
+    && apt-get install -y --no-install-recommends libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
