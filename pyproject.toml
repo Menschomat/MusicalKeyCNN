@@ -3,7 +3,7 @@ name = "musicalkeycnn"
 version = "0.1.0"
 description = "CNN for musical key detection using PyTorch"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.110.0",
     "librosa>=0.10.0",
@@ -21,3 +21,12 @@ dev = [
     "black",
     "ruff",
 ]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchaudio = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
