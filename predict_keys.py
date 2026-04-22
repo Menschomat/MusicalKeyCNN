@@ -1,7 +1,6 @@
 import argparse
 from pathlib import Path
 import torch
-import torchaudio
 import librosa
 import numpy as np
 
@@ -65,13 +64,7 @@ def preprocess_audio(mp3_path, sample_rate=44100, n_bins=105, hop_length=8820):
     Returns:
         torch.Tensor: Shape (1, freq_bins, time_frames), ready for model input.
     """
-    waveform, sr = torchaudio.load(mp3_path)
-    if waveform.shape[0] > 1:
-        waveform = waveform.mean(dim=0, keepdim=True)
-    if sr != sample_rate:
-        resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=sample_rate)
-        waveform = resampler(waveform)
-    waveform = waveform.squeeze(0).numpy().astype(np.float32)
+    waveform, _ = librosa.load(mp3_path, sr=sample_rate, mono=True)
 
     cqt = librosa.cqt(waveform, sr=sample_rate, hop_length=hop_length, n_bins=n_bins, bins_per_octave=24, fmin=65)
     spec = np.abs(cqt)
