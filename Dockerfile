@@ -17,6 +17,7 @@ FROM python:3.13-slim AS runtime
 # libsndfile1  – required by soundfile (librosa audio I/O)
 # ffmpeg       – required by torchaudio to decode MP3 files
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends libsndfile1 ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
