@@ -11,6 +11,11 @@ COPY pyproject.toml uv.lock ./
 # Install production deps into an isolated venv; skip the project package itself
 RUN uv sync --frozen --no-dev --no-install-project
 
+# Pre-download beat-this model checkpoint (~77 MB) into the torch hub cache.
+# Placed after uv sync so this layer is invalidated only when deps change,
+# not when application source files change.
+RUN .venv/bin/python -c "from beat_this.inference import File2Beats; File2Beats()"
+
 # ── Stage 2: minimal runtime image ───────────────────────────────────────────
 FROM python:3.13-slim AS runtime
 
@@ -25,6 +30,9 @@ WORKDIR /app
 
 # Copy the pre-built venv from the builder stage
 COPY --from=builder /app/.venv /app/.venv
+
+# Copy the pre-downloaded beat-this checkpoint so the first request doesn't trigger a network call
+COPY --from=builder /root/.cache/torch/hub/checkpoints/beat_this-final0.ckpt /root/.cache/torch/hub/checkpoints/beat_this-final0.ckpt
 
 # Copy only the files the API actually imports
 COPY api.py eval.py predict_keys.py predict_bpm.py model.py dataset.py ./
