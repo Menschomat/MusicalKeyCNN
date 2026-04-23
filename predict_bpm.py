@@ -13,8 +13,8 @@ def _get_tracker():
 
 def detect_bpm(audio_path):
     beats, _ = _get_tracker()(str(audio_path))
-    if len(beats) > 1:
-        bpm = 60.0 / np.median(np.diff(beats))
-    else:
-        bpm = 0.0
-    return round(float(bpm), 1)
+    if len(beats) < 2:
+        return 0.0
+    # Fit t = t0 + n*T across all beats — slope T is the global constant period
+    period, _ = np.polyfit(np.arange(len(beats)), beats, 1)
+    return round(60.0 / period, 1)
