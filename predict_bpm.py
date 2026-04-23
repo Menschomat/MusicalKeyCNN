@@ -18,6 +18,13 @@ def detect_bpm(audio_path):
 
     ibis = np.diff(beats)
 
+    # Remove outliers relative to the median: long gaps from silent sections and
+    # re-lock jitter after breakdowns produce IBIs far outside the true beat period.
+    median_ibi = np.median(ibis)
+    ibis = ibis[(ibis >= 0.4 * median_ibi) & (ibis <= 2.5 * median_ibi)]
+    if len(ibis) < 4:
+        return 0.0
+
     # Vectorised grid search: find the constant BPM whose beat grid best explains
     # all inter-beat intervals as integer multiples (tolerates missed/doubled beats).
     candidates = np.arange(60.0, 200.02, 0.02)
