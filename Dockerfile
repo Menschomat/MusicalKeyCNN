@@ -35,7 +35,7 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /root/.cache/torch/hub/checkpoints/beat_this-final0.ckpt /root/.cache/torch/hub/checkpoints/beat_this-final0.ckpt
 
 # Copy only the files the API actually imports
-COPY api.py audio_utils.py eval.py predict_keys.py predict_bpm.py model.py dataset.py ./
+COPY api.py audio_utils.py constants.py eval.py predict_keys.py predict_bpm.py model.py dataset.py ./
 
 # Model checkpoint – required at startup
 COPY checkpoints/ ./checkpoints/

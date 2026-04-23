@@ -2,11 +2,13 @@ import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from typing import List
+
 import torch
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from audio_utils import load_audio, preprocess_from_waveform
+from audio_utils import compute_waveform, load_audio, preprocess_from_waveform
 from eval import load_model
 from predict_bpm import detect_bpm
 from predict_keys import SUPPORTED_EXTENSIONS, camelot_output
@@ -35,6 +37,7 @@ class PredictResponse(BaseModel):
     camelot: str
     key: str
     bpm: float
+    waveform: List[float]
 
 
 @app.get("/health")
@@ -66,6 +69,7 @@ async def predict(file: UploadFile = File(...)):
 
         camelot_str, key_text = camelot_output(pred)
         bpm = detect_bpm(waveform, sr)
+        waveform_data = compute_waveform(waveform)
     finally:
         tmp_path.unlink(missing_ok=True)
 
@@ -75,4 +79,5 @@ async def predict(file: UploadFile = File(...)):
         camelot=camelot_str,
         key=key_text,
         bpm=bpm,
+        waveform=waveform_data,
     )

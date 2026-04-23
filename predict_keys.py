@@ -3,6 +3,7 @@ from pathlib import Path
 import torch
 
 from audio_utils import load_audio, preprocess_from_waveform
+from constants import HOP_LENGTH, N_BINS, SAMPLE_RATE
 from dataset import CAMELOT_MAPPING
 from eval import load_model
 
@@ -49,7 +50,7 @@ def get_audio_files(path):
     else:
         raise FileNotFoundError(f"{path} is not a valid file or folder.")
 
-def preprocess_audio(mp3_path, sample_rate=44100, n_bins=105, hop_length=8820):
+def preprocess_audio(mp3_path, sample_rate=SAMPLE_RATE, n_bins=N_BINS, hop_length=HOP_LENGTH):
     """
     Loads an audio file and extracts a log-magnitude CQT spectrogram.
 

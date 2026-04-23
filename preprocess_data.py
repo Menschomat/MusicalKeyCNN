@@ -6,6 +6,8 @@ import librosa
 import numpy as np
 import pickle
 
+from constants import BINS_PER_OCTAVE, FMIN, HOP_LENGTH, N_BINS, SAMPLE_RATE
+
 def preprocess_data(dataset_dir, output_dir, pitch_range = (-4, 7)):
     """
     Preprocesses the MTG/GiantSteps Key Dataset for key classification, as in
@@ -30,9 +32,6 @@ def preprocess_data(dataset_dir, output_dir, pitch_range = (-4, 7)):
     output_dir.mkdir(exist_ok=True)
     audio_dir = Path(dataset_dir) / 'audio'
     annotations_path = Path(dataset_dir) / 'annotations' / 'annotations.txt'
-    sample_rate = 44100
-    n_bins = 105             # Number of CQT bins: covers range with high resolution
-    hop_length = 8820        # Large hop (approx. 0.2 sec at 44100 Hz, ~5 FPS) as in paper for global context
     data = []
 
     # 1. Gather all high-confidence audio files and Camelot-encoded labels
@@ -56,8 +55,8 @@ def preprocess_data(dataset_dir, output_dir, pitch_range = (-4, 7)):
         if waveform.shape[0] > 1:
             waveform = waveform.mean(dim=0, keepdim=True)
         # Resample to target sample rate if necessary
-        if sr != sample_rate:
-            resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=sample_rate)
+        if sr != SAMPLE_RATE:
+            resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=SAMPLE_RATE)
             waveform = resampler(waveform)
         waveform = waveform.squeeze(0).numpy()   # Convert tensor to numpy array for librosa
 
@@ -68,17 +67,17 @@ def preprocess_data(dataset_dir, output_dir, pitch_range = (-4, 7)):
                 continue
             # Apply pitch shift except when n_steps==0 (original)
             if n_steps != 0:
-                shifted_waveform = librosa.effects.pitch_shift(waveform.astype(np.float32), sr=sample_rate, n_steps=n_steps)
+                shifted_waveform = librosa.effects.pitch_shift(waveform.astype(np.float32), sr=SAMPLE_RATE, n_steps=n_steps)
             else:
                 shifted_waveform = waveform
             # Compute CQT (log-frequency spectrogram), following the paper's input representation
             cqt = librosa.cqt(
                 shifted_waveform,
-                sr=sample_rate,
-                hop_length=hop_length,
-                n_bins=n_bins,
-                bins_per_octave=24,
-                fmin=65,                       # Lowest frequency bin (Hz)
+                sr=SAMPLE_RATE,
+                hop_length=HOP_LENGTH,
+                n_bins=N_BINS,
+                bins_per_octave=BINS_PER_OCTAVE,
+                fmin=FMIN,
             )
             spec = np.abs(cqt)                 # Only magnitude is used
             spec = np.log1p(spec)              # Log-magnitude for dynamic range compression, as in the paper
