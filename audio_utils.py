@@ -1,8 +1,12 @@
+import colorsys
 import librosa
 import numpy as np
 import torch
 
-from constants import BASS_MAX_HZ, BINS_PER_OCTAVE, FMIN, HOP_LENGTH, MID_MAX_HZ, N_BINS, SAMPLE_RATE, WAVEFORM_NUM_POINTS
+from constants import (
+    BASS_MAX_HZ, BINS_PER_OCTAVE, FMIN, HOP_LENGTH, HUE_FREQ_MAX, HUE_FREQ_MIN,
+    MID_MAX_HZ, N_BINS, SAMPLE_RATE, STFT_HOP_LENGTH, STFT_N_FFT, WAVEFORM_NUM_POINTS,
+)
 
 
 def load_audio(path, sample_rate=SAMPLE_RATE):
@@ -31,10 +35,10 @@ def compute_waveform_basic(waveform, sr, num_points=WAVEFORM_NUM_POINTS):
     return {"times": times, "amplitudes": (rms / max_val).tolist()}
 
 
-def compute_waveform_rgb(waveform, sr, num_points=WAVEFORM_NUM_POINTS):
+def compute_waveform_hmb(waveform, sr, num_points=WAVEFORM_NUM_POINTS):
     """
-    Compute a frequency-colored waveform: R=bass, G=mids, B=highs.
-    Returns {"times": [...], "r": [...], "g": [...], "b": [...]}, all normalized to [0, 1].
+    Compute a 3-band waveform with independent energy per band.
+    Returns {"times": [...], "bass": [...], "mid": [...], "high": [...]}, all normalized to [0, 1].
     """
     chunks, chunk_size = _chunk(waveform, num_points)
 
@@ -46,16 +50,56 @@ def compute_waveform_rgb(waveform, sr, num_points=WAVEFORM_NUM_POINTS):
 
     # Vectorised FFT across all chunks at once
     mags = np.abs(np.fft.rfft(chunks, axis=1))  # (num_points, chunk_size//2 + 1)
-    r = mags[:, bass_mask].sum(axis=1)
-    g = mags[:, mid_mask].sum(axis=1)
-    b = mags[:, high_mask].sum(axis=1)
+    bass = mags[:, bass_mask].sum(axis=1)
+    mid = mags[:, mid_mask].sum(axis=1)
+    high = mags[:, high_mask].sum(axis=1)
 
     def norm(arr):
         m = arr.max() or 1.0
         return (arr / m).tolist()
 
     times = ((np.arange(num_points) + 0.5) * chunk_size / sr).tolist()
-    return {"times": times, "r": norm(r), "g": norm(g), "b": norm(b)}
+    return {"times": times, "bass": norm(bass), "mid": norm(mid), "high": norm(high)}
+
+
+def compute_waveform_rainbow(waveform, sr, num_points=WAVEFORM_NUM_POINTS):
+    """
+    Compute a Rekordbox-style rainbow waveform.
+    For each time point: spectral centroid → hue, RMS → brightness, full saturation.
+    Returns {"times": [...], "r": [...], "g": [...], "b": [...]}, channels in [0, 1].
+    """
+    # Full STFT for fine frequency resolution
+    stft = librosa.stft(waveform, n_fft=STFT_N_FFT, hop_length=STFT_HOP_LENGTH)
+    mag = np.abs(stft)  # (n_fft//2 + 1, n_frames)
+
+    freqs = librosa.fft_frequencies(sr=sr, n_fft=STFT_N_FFT)  # Hz per bin
+    power = mag ** 2
+
+    # Spectral centroid (Hz) and RMS per STFT frame
+    centroid = np.sum(freqs[:, None] * power, axis=0) / (power.sum(axis=0) + 1e-8)
+    rms = np.sqrt(power.mean(axis=0))
+
+    # Downsample STFT frames → num_points by averaging chunks
+    n_frames = mag.shape[1]
+    chunk_frames = n_frames // num_points
+    centroid = centroid[: chunk_frames * num_points].reshape(num_points, chunk_frames).mean(axis=1)
+    rms = rms[: chunk_frames * num_points].reshape(num_points, chunk_frames).mean(axis=1)
+
+    # Map centroid to hue [0, 0.667] on a log frequency scale (red=bass, blue=highs)
+    log_min = np.log(HUE_FREQ_MIN)
+    log_max = np.log(HUE_FREQ_MAX)
+    hue = (np.log(np.clip(centroid, HUE_FREQ_MIN, HUE_FREQ_MAX)) - log_min) / (log_max - log_min) * 0.667
+
+    # Normalize RMS to [0, 1] for brightness (value in HSV)
+    brightness = rms / (rms.max() or 1.0)
+
+    # Convert HSV → RGB (full saturation so colors stay vivid)
+    colors = [colorsys.hsv_to_rgb(float(h), 1.0, float(v)) for h, v in zip(hue, brightness)]
+
+    chunk_samples = chunk_frames * STFT_HOP_LENGTH
+    times = ((np.arange(num_points) + 0.5) * chunk_samples / sr).tolist()
+    r, g, b = zip(*colors)
+    return {"times": times, "r": list(r), "g": list(g), "b": list(b)}
 
 
 def preprocess_from_waveform(waveform, sample_rate=SAMPLE_RATE, n_bins=N_BINS, hop_length=HOP_LENGTH):

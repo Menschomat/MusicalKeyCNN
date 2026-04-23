@@ -9,3 +9,9 @@ FMIN = 65                # Lowest CQT frequency (Hz)
 WAVEFORM_NUM_POINTS = 1000
 BASS_MAX_HZ = 250
 MID_MAX_HZ = 2500
+
+# Rainbow waveform — STFT settings and hue frequency range
+STFT_N_FFT = 2048
+STFT_HOP_LENGTH = 512
+HUE_FREQ_MIN = 20     # Hz → hue 0.0 (red)
+HUE_FREQ_MAX = 20000  # Hz → hue 0.667 (blue)

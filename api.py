@@ -8,7 +8,7 @@ import torch
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from audio_utils import compute_waveform_basic, compute_waveform_rgb, load_audio, preprocess_from_waveform
+from audio_utils import compute_waveform_basic, compute_waveform_hmb, compute_waveform_rainbow, load_audio, preprocess_from_waveform
 from eval import load_model
 from predict_bpm import detect_bpm
 from predict_keys import SUPPORTED_EXTENSIONS, camelot_output
@@ -36,6 +36,13 @@ class WaveformBasic(BaseModel):
     amplitudes: List[float]
 
 
+class WaveformHMB(BaseModel):
+    times: List[float]
+    bass: List[float]
+    mid: List[float]
+    high: List[float]
+
+
 class WaveformRGB(BaseModel):
     times: List[float]
     r: List[float]
@@ -50,7 +57,8 @@ class PredictResponse(BaseModel):
     key: str
     bpm: float
     waveform_basic: WaveformBasic
-    waveform_rgb: WaveformRGB
+    waveform_hmb: WaveformHMB
+    waveform_rainbow: WaveformRGB
 
 
 @app.get("/health")
@@ -83,7 +91,8 @@ async def predict(file: UploadFile = File(...)):
         camelot_str, key_text = camelot_output(pred)
         bpm = detect_bpm(waveform, sr)
         waveform_basic = compute_waveform_basic(waveform, sr)
-        waveform_rgb = compute_waveform_rgb(waveform, sr)
+        waveform_hmb = compute_waveform_hmb(waveform, sr)
+        waveform_rainbow = compute_waveform_rainbow(waveform, sr)
     finally:
         tmp_path.unlink(missing_ok=True)
 
@@ -94,5 +103,6 @@ async def predict(file: UploadFile = File(...)):
         key=key_text,
         bpm=bpm,
         waveform_basic=WaveformBasic(**waveform_basic),
-        waveform_rgb=WaveformRGB(**waveform_rgb),
+        waveform_hmb=WaveformHMB(**waveform_hmb),
+        waveform_rainbow=WaveformRGB(**waveform_rainbow),
     )
