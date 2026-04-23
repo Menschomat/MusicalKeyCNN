@@ -1,9 +1,8 @@
 import argparse
 from pathlib import Path
 import torch
-import librosa
-import numpy as np
 
+from audio_utils import load_audio, preprocess_from_waveform
 from dataset import CAMELOT_MAPPING
 from eval import load_model
 
@@ -50,31 +49,6 @@ def get_audio_files(path):
     else:
         raise FileNotFoundError(f"{path} is not a valid file or folder.")
 
-def preprocess_from_waveform(waveform, sample_rate=44100, n_bins=105, hop_length=8820):
-    """
-    Extracts a log-magnitude CQT spectrogram from a pre-loaded mono waveform.
-
-    Args:
-        waveform (np.ndarray): Mono audio signal.
-        sample_rate (int): Sample rate of the waveform.
-        n_bins (int): Number of CQT bins.
-        hop_length (int): Hop length for CQT.
-
-    Returns:
-        torch.Tensor: Shape (1, freq_bins, time_frames), ready for model input.
-    """
-    cqt = librosa.cqt(waveform, sr=sample_rate, hop_length=hop_length, n_bins=n_bins, bins_per_octave=24, fmin=65)
-    spec = np.abs(cqt)
-    spec = np.log1p(spec)
-
-    # Remove last frequency bin
-    chunk = spec[:, 0:-2]
-    spec_tensor = torch.tensor(chunk, dtype=torch.float32)
-    if spec_tensor.ndim == 2:
-        spec_tensor = spec_tensor.unsqueeze(0)  # Shape: (1, freq, time)
-    return spec_tensor
-
-
 def preprocess_audio(mp3_path, sample_rate=44100, n_bins=105, hop_length=8820):
     """
     Loads an audio file and extracts a log-magnitude CQT spectrogram.
@@ -88,8 +62,8 @@ def preprocess_audio(mp3_path, sample_rate=44100, n_bins=105, hop_length=8820):
     Returns:
         torch.Tensor: Shape (1, freq_bins, time_frames), ready for model input.
     """
-    waveform, _ = librosa.load(mp3_path, sr=sample_rate, mono=True)
-    return preprocess_from_waveform(waveform, sample_rate, n_bins, hop_length)
+    waveform, sr = load_audio(mp3_path, sample_rate)
+    return preprocess_from_waveform(waveform, sr, n_bins, hop_length)
 
 def camelot_output(pred_camelot):
     """
