@@ -7,6 +7,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from eval import load_model
+from predict_bpm import detect_bpm
 from predict_keys import SUPPORTED_EXTENSIONS, camelot_output, preprocess_audio
 
 MODEL_PATH = Path("checkpoints/keynet.pt")
@@ -32,6 +33,7 @@ class PredictResponse(BaseModel):
     class_id: int
     camelot: str
     key: str
+    bpm: float
 
 
 @app.get("/health")
@@ -60,6 +62,7 @@ async def predict(file: UploadFile = File(...)):
             pred = int(torch.argmax(outputs, dim=1).cpu().item())
 
         camelot_str, key_text = camelot_output(pred)
+        bpm = detect_bpm(tmp_path)
     finally:
         tmp_path.unlink(missing_ok=True)
 
@@ -68,4 +71,5 @@ async def predict(file: UploadFile = File(...)):
         class_id=pred,
         camelot=camelot_str,
         key=key_text,
+        bpm=bpm,
     )

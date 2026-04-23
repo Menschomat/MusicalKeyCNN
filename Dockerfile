@@ -27,7 +27,7 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 
 # Copy only the files the API actually imports
-COPY api.py eval.py predict_keys.py model.py dataset.py ./
+COPY api.py eval.py predict_keys.py predict_bpm.py model.py dataset.py ./
 
 # Model checkpoint – required at startup
 COPY checkpoints/ ./checkpoints/
