@@ -5,6 +5,7 @@ description = "CNN for musical key detection using PyTorch"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "beat-this>=1.1.0",
     "fastapi>=0.110.0",
     "librosa>=0.10.0",
     "numpy>=1.24.0",

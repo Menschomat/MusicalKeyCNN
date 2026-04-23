@@ -1,15 +1,20 @@
-import librosa
 import numpy as np
+from beat_this.inference import File2Beats
+
+_tracker = None
 
 
-def detect_bpm(audio_path, sample_rate=22050):
-    waveform, _ = librosa.load(audio_path, sr=sample_rate, mono=True)
-    onset_env = librosa.onset.onset_strength(y=waveform, sr=sample_rate)
-    _, beat_frames = librosa.beat.beat_track(onset_envelope=onset_env, sr=sample_rate)
-    beat_times = librosa.frames_to_time(beat_frames, sr=sample_rate)
-    if len(beat_times) > 1:
-        bpm = 60.0 / np.median(np.diff(beat_times))
+def _get_tracker():
+    global _tracker
+    if _tracker is None:
+        _tracker = File2Beats(checkpoint_path="final0", device="cpu", dbn=False)
+    return _tracker
+
+
+def detect_bpm(audio_path):
+    beats, _ = _get_tracker()(str(audio_path))
+    if len(beats) > 1:
+        bpm = 60.0 / np.median(np.diff(beats))
     else:
-        tempo = librosa.feature.tempo(onset_envelope=onset_env, sr=sample_rate)
-        bpm = float(np.atleast_1d(tempo)[0])
+        bpm = 0.0
     return round(float(bpm), 1)
