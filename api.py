@@ -2,13 +2,14 @@ import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import librosa
 import torch
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from eval import load_model
 from predict_bpm import detect_bpm
-from predict_keys import SUPPORTED_EXTENSIONS, camelot_output, preprocess_audio
+from predict_keys import SUPPORTED_EXTENSIONS, camelot_output, preprocess_from_waveform
 
 MODEL_PATH = Path("checkpoints/keynet.pt")
 
@@ -54,7 +55,9 @@ async def predict(file: UploadFile = File(...)):
         tmp_path = Path(tmp.name)
 
     try:
-        spec_tensor = preprocess_audio(tmp_path)
+        waveform, sr = librosa.load(tmp_path, sr=44100, mono=True)
+
+        spec_tensor = preprocess_from_waveform(waveform, sr)
         spec_tensor = spec_tensor.unsqueeze(0).to(_device)
 
         with torch.no_grad():
@@ -62,7 +65,7 @@ async def predict(file: UploadFile = File(...)):
             pred = int(torch.argmax(outputs, dim=1).cpu().item())
 
         camelot_str, key_text = camelot_output(pred)
-        bpm = detect_bpm(tmp_path)
+        bpm = detect_bpm(waveform, sr)
     finally:
         tmp_path.unlink(missing_ok=True)
 

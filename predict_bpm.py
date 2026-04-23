@@ -1,16 +1,16 @@
 import numpy as np
-from beat_this.inference import File2Beats
+from beat_this.inference import Audio2Beats
 
 _tracker = None
 
 def _get_tracker():
     global _tracker
     if _tracker is None:
-        _tracker = File2Beats(checkpoint_path="final0", device="cpu", dbn=False)
+        _tracker = Audio2Beats(checkpoint_path="final0", device="cpu", dbn=False)
     return _tracker
 
-def detect_bpm(audio_path, min_bpm=60.0, max_bpm=200.0):
-    beats, _ = _get_tracker()(str(audio_path))
+def detect_bpm(signal, sr, min_bpm=60.0, max_bpm=200.0):
+    beats, _ = _get_tracker()(signal, sr)
     if len(beats) < 4:
         return 0.0
 
