@@ -8,7 +8,7 @@ import torch
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from audio_utils import compute_waveform, load_audio, preprocess_from_waveform
+from audio_utils import compute_waveform_basic, compute_waveform_rgb, load_audio, preprocess_from_waveform
 from eval import load_model
 from predict_bpm import detect_bpm
 from predict_keys import SUPPORTED_EXTENSIONS, camelot_output
@@ -31,13 +31,26 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="MusicalKeyCNN API", version="0.1.0", lifespan=lifespan)
 
 
+class WaveformBasic(BaseModel):
+    times: List[float]
+    amplitudes: List[float]
+
+
+class WaveformRGB(BaseModel):
+    times: List[float]
+    r: List[float]
+    g: List[float]
+    b: List[float]
+
+
 class PredictResponse(BaseModel):
     filename: str
     class_id: int
     camelot: str
     key: str
     bpm: float
-    waveform: List[float]
+    waveform_basic: WaveformBasic
+    waveform_rgb: WaveformRGB
 
 
 @app.get("/health")
@@ -69,7 +82,8 @@ async def predict(file: UploadFile = File(...)):
 
         camelot_str, key_text = camelot_output(pred)
         bpm = detect_bpm(waveform, sr)
-        waveform_data = compute_waveform(waveform)
+        waveform_basic = compute_waveform_basic(waveform, sr)
+        waveform_rgb = compute_waveform_rgb(waveform, sr)
     finally:
         tmp_path.unlink(missing_ok=True)
 
@@ -79,5 +93,6 @@ async def predict(file: UploadFile = File(...)):
         camelot=camelot_str,
         key=key_text,
         bpm=bpm,
-        waveform=waveform_data,
+        waveform_basic=WaveformBasic(**waveform_basic),
+        waveform_rgb=WaveformRGB(**waveform_rgb),
     )

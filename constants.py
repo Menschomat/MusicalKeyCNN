@@ -7,3 +7,5 @@ FMIN = 65                # Lowest CQT frequency (Hz)
 
 # Waveform visualization
 WAVEFORM_NUM_POINTS = 1000
+BASS_MAX_HZ = 250
+MID_MAX_HZ = 2500
